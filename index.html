@@ -32,7 +32,7 @@
             font-size: 1.8em;
             margin-bottom: 15px;
             border: none;
-            background: #333;
+            background: #6b6464;
             color: white;
             padding: 10px;
             border-radius: 5px;
@@ -52,15 +52,12 @@
             border: none;
             background: #444;
             color: white;
-            box-shadow: 4px 4px 8px #1a1a1a, -4px -4px 8px #555;
             cursor: pointer;
             transition: 0.2s;
         }
-        /* button:hover {
-            background: #555;
-        } */
+        
         .equal {
-            grid-column: span 2;
+            /* grid-column: span 2; */
             background: #28a745;
             color: white;
         }
@@ -86,6 +83,7 @@
             text-align: left;
             overflow-y: auto;
             max-height: 200px;
+            display: none;
         }
      
         .history ul {
@@ -96,11 +94,20 @@
         .history li {
             padding: 5px 0;
             border-bottom: 1px solid #555;
+          
         }
 
         .clear-history {
             font-size: 18px;
             color: #ff5733;
+            cursor: pointer;
+            transition: 0.3s ease;
+            margin-left: auto;
+            
+        }
+        .show-calculator {
+            font-size: 18px;
+            color: #f1e6e3;
             cursor: pointer;
             transition: 0.3s ease;
             margin-left: auto;
@@ -117,12 +124,49 @@
                 font-size: 1.2em;
             }
         }
+
+
+        /* Dark Mode */
+        .dark-mode {
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        /* Calculator Styles */
+        .calculator {
+            background-color: #ebe3e3;
+            padding: 20px;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        /* Dark Mode Calculator */
+        .dark-mode .calculator {
+            background-color: #333;
+        }
+
+        /* Button Styling */
+        .themeChange {
+            background-color: #ddd;
+            color: black;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        /* Dark Mode Button */
+        .dark-mode .themeChange {
+            background-color: #444;
+            color: white;
+        }
+
     </style>
 </head>
 <body>
     <div class="calculator">
         <input type="text" id="display" disabled>
-        <div class="buttons">
+        <div class="buttons " id="buttons">
             <button onclick="clearDisplay()" class="clear">C</button>
             <button onclick="appendValue('/')">/</button>
             <button onclick="appendValue('*')">*</button>
@@ -140,13 +184,17 @@
             <button onclick="appendValue('0')">0</button>
             <button onclick="appendValue('.')">.</button>
             <button onclick="calculateResult()" class="equal">=</button>
+            <button onclick="toggleHistory()" class="history-list"><i class="fa-solid fa-history"></i></button>
+            <button onclick="downloadHistory()" class="history-download"><i class="fa-solid fa-download"></i></button>
+            <button onclick="themeChange()" class="themeChange"><i class="fa-solid fa-themeset"></i></button>
+        </div>
+        <div class="history" id="history">
+            <h3>Calculation History <i class="fa-solid fa-trash clear-history" onclick="clearHistory()"></i>  <i class="fa-solid fa-calculator show-calculator" onclick="showCalculator()"></i></h3>
+            <ul id="history-list"></ul>
         </div>
     </div>
 
-    <div class="history">
-        <h3>Calculation History <i class="fa-solid fa-trash clear-history" onclick="clearHistory()"></i></h3>
-        <ul id="history-list"></ul>
-    </div>
+ 
     
     
     <script>
@@ -167,18 +215,21 @@
                 document.getElementById('display').value = result;
                 addToHistory(expression + ' = ' + result);
             } catch {
-                document.getElementById('display').value = 'Error';
+                document.getElementById('display').value = 'Malformed Expression';
             }
         }
 
         function addToHistory(entry) {
-            if (history.length >= 5) {
-                history.shift();
+            if (!entry.includes("undefined") && entry.trim() !== "=") { 
+                if (history.length >= 5) {
+                    history.shift(); // Remove the oldest entry when history reaches limit
+                }
+                history.push(entry);
+                localStorage.setItem('calcHistory', JSON.stringify(history));
+                updateHistoryDisplay();
             }
-            history.push(entry);
-            localStorage.setItem('calcHistory', JSON.stringify(history));
-            updateHistoryDisplay();
         }
+
 
         function updateHistoryDisplay() {
             const historyList = document.getElementById('history-list');
@@ -195,6 +246,54 @@
             localStorage.removeItem('calcHistory');
             updateHistoryDisplay();
         }
+
+        function toggleHistory() {
+            document.getElementById('display').style.display = 'none'; // Hide display
+            document.getElementById('buttons').style.display = 'none'; // Hide buttons
+            document.getElementById('history').style.display = 'block'; 
+        }
+
+        function showCalculator() {
+            document.getElementById('display').style.display = 'block'; // Show display
+            document.getElementById('buttons').style.display = 'grid'; // Show buttons
+            document.getElementById('history').style.display = 'none'; // Hide history card
+        }
+
+        function downloadHistory() {
+             // Retrieve history from localStorage
+            const history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+
+            if (history.length === 0) {
+                alert("No calculation history to download.");
+                return;
+            }
+            const historyText = history.join('\n');
+            const blob = new Blob([historyText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'calculation_history.txt';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function themeChange() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+
+            // Save theme preference in localStorage
+            const isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        }
+
+        // Apply the saved theme when the page loads
+        window.onload = function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        };
+
 
 
         document.addEventListener('DOMContentLoaded', updateHistoryDisplay);
