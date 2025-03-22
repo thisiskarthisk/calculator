@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Calculator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('./bg.jpg') no-repeat center center/cover;
+            flex-direction: column;
+        }
+        .calculator {
+            width: 90%;
+            max-width: 350px;
+            padding: 20px;
+            background: #222;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 95%;
+            height: 60px;
+            text-align: right;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            border: none;
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+
+        }
+        button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            border: none;
+            background: #444;
+            color: white;
+            box-shadow: 4px 4px 8px #1a1a1a, -4px -4px 8px #555;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        /* button:hover {
+            background: #555;
+        } */
+        .equal {
+            grid-column: span 2;
+            background: #28a745;
+            color: white;
+        }
+        .clear {
+            background: #dc3545;
+            color: white;
+        }
+
+    
+        button:active {
+            transform: scale(0.9);
+            box-shadow: inset 3px 3px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .history {
+            width: 90%;
+            max-width: 350px;
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+     
+        .history ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .history li {
+            padding: 5px 0;
+            border-bottom: 1px solid #555;
+        }
+
+        .clear-history {
+            font-size: 18px;
+            color: #ff5733;
+            cursor: pointer;
+            transition: 0.3s ease;
+            margin-left: auto;
+            
+        }
+
+        .clear-history:hover {
+            color: #ff2a00;
+        }
+
+        @media (max-width: 400px) {
+            button {
+                padding: 15px;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <input type="text" id="display" disabled>
+        <div class="buttons">
+            <button onclick="clearDisplay()" class="clear">C</button>
+            <button onclick="appendValue('/')">/</button>
+            <button onclick="appendValue('*')">*</button>
+            <button onclick="appendValue('-')">-</button>
+            <button onclick="appendValue('7')">7</button>
+            <button onclick="appendValue('8')">8</button>
+            <button onclick="appendValue('9')">9</button>
+            <button onclick="appendValue('+')">+</button>
+            <button onclick="appendValue('4')">4</button>
+            <button onclick="appendValue('5')">5</button>
+            <button onclick="appendValue('6')">6</button>
+            <button onclick="appendValue('1')">1</button>
+            <button onclick="appendValue('2')">2</button>
+            <button onclick="appendValue('3')">3</button>
+            <button onclick="appendValue('0')">0</button>
+            <button onclick="appendValue('.')">.</button>
+            <button onclick="calculateResult()" class="equal">=</button>
+        </div>
+    </div>
+
+    <div class="history">
+        <h3>Calculation History <i class="fa-solid fa-trash clear-history" onclick="clearHistory()"></i></h3>
+        <ul id="history-list"></ul>
+    </div>
+    
+    
+    <script>
+        let history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+        
+        function appendValue(value) {
+            document.getElementById('display').value += value;
+        }
+
+        function clearDisplay() {
+            document.getElementById('display').value = '';
+        }
+
+        function calculateResult() {
+            try {
+                let expression = document.getElementById('display').value;
+                let result = eval(expression);
+                document.getElementById('display').value = result;
+                addToHistory(expression + ' = ' + result);
+            } catch {
+                document.getElementById('display').value = 'Error';
+            }
+        }
+
+        function addToHistory(entry) {
+            if (history.length >= 5) {
+                history.shift();
+            }
+            history.push(entry);
+            localStorage.setItem('calcHistory', JSON.stringify(history));
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            history.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = item;
+                historyList.appendChild(li);
+            });
+        }
+
+        function clearHistory() {
+            history = [];
+            localStorage.removeItem('calcHistory');
+            updateHistoryDisplay();
+        }
+
+
+        document.addEventListener('DOMContentLoaded', updateHistoryDisplay);
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            if (!isNaN(key) || ['+', '-', '*', '/', '.', 'Enter', 'Backspace'].includes(key)) {
+                if (key === 'Enter') {
+                    calculateResult();
+                } else if (key === 'Backspace') {
+                    document.getElementById('display').value = document.getElementById('display').value.slice(0, -1);
+                } else {
+                    appendValue(key);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
